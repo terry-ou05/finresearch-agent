@@ -1,18 +1,20 @@
 # FinResearch Agent
 
-FinResearch Agent is a Streamlit-based MVP for LLM-assisted equity research. A user enters a stock ticker such as `AAPL`, `MSFT`, or `NVDA`; the app fetches market and company data, calculates basic financial metrics, visualizes price history, and generates a structured research report with an OpenAI-compatible LLM.
+FinResearch Agent is a Streamlit-based MVP for LLM-assisted equity research. A user enters a stock ticker such as `AAPL`, `MSFT`, or `NVDA`; the app fetches market and company data, calculates basic financial metrics, visualizes price history, compares peers, and generates a structured research report with an OpenAI-compatible LLM.
 
-This first version is intentionally scoped as a portfolio-ready MVP. It does not include complex RAG, autonomous trading, portfolio execution, or real investment advice.
+This project is intentionally scoped as a portfolio-ready MVP. It does not include complex RAG, autonomous trading, portfolio execution, or real investment advice.
 
 ## Features
 
 - Fetch historical stock prices with `yfinance`
 - Fetch company profile, market metadata, and basic financial statements
 - Calculate basic metrics including one-year return, annualized volatility, market cap, PE, PB, profit margin, ROE, revenue growth, and dividend yield
+- Compare the primary ticker with peers using market cap, valuation, profitability, ROE, and revenue growth metrics
 - Visualize stock price history with Plotly
 - Generate a structured LLM report with required research sections
 - Support OpenAI or DeepSeek through an OpenAI-compatible API configuration
-- Provide a fallback report when no API key is configured
+- Provide a fallback report only when no API key is configured
+- Show safe provider information by default without exposing API key prefixes
 
 ## Tech Stack
 
@@ -28,19 +30,20 @@ This first version is intentionally scoped as a portfolio-ready MVP. It does not
 
 ```text
 finresearch-agent/
-├── app.py
-├── requirements.txt
-├── README.md
-├── .env.example
-└── src/
-    ├── tools/
-    │   ├── market_data_tool.py
-    │   ├── metrics_tool.py
-    │   └── report_tool.py
-    ├── prompts/
-    │   └── financial_report_prompt.py
-    └── utils/
-        └── config.py
+|-- app.py
+|-- requirements.txt
+|-- README.md
+|-- .env.example
+`-- src/
+    |-- tools/
+    |   |-- market_data_tool.py
+    |   |-- metrics_tool.py
+    |   |-- peer_comparison_tool.py
+    |   `-- report_tool.py
+    |-- prompts/
+    |   `-- financial_report_prompt.py
+    `-- utils/
+        `-- config.py
 ```
 
 ## Setup
@@ -94,6 +97,17 @@ streamlit run app.py
 
 Then open the local Streamlit URL shown in the terminal.
 
+## Peer Comparison
+
+The app supports peer comparison for valuation and profitability context. Users can enter peer tickers manually, such as `MSFT,GOOGL,NVDA`, or leave the field blank to use the built-in mapping:
+
+- `AAPL`: `MSFT`, `GOOGL`, `AMZN`, `NVDA`
+- `MSFT`: `AAPL`, `GOOGL`, `AMZN`, `ORCL`
+- `NVDA`: `AMD`, `INTC`, `AVGO`, `QCOM`
+- `TSLA`: `F`, `GM`, `RIVN`, `LCID`
+
+The comparison table includes market cap, trailing PE, forward PE, price to book, profit margin, ROE, and revenue growth. Missing data is displayed as `N/A`.
+
 ## Report Sections
 
 The generated report includes:
@@ -112,9 +126,9 @@ The prompt explicitly avoids direct investment recommendations such as buy, sell
 
 - Add RAG over SEC filings, earnings transcripts, annual reports, and investor presentations
 - Add a vector database such as Chroma, FAISS, or pgvector
-- Add an Agent workflow with dedicated tools for market data, filings search, news search, and report generation
+- Add an Agent workflow with dedicated tools for market data, filings search, news search, peer comparison, and report generation
 - Add citation-backed report sections with source links
-- Add multi-company comparison and peer benchmarking
+- Add multi-company comparison charts and peer benchmarking
 - Add historical financial statement charts
 - Add caching with `st.cache_data` to reduce repeated API calls
 - Add unit tests and CI checks

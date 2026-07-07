@@ -4,6 +4,7 @@ import streamlit as st
 
 from src.tools.market_data_tool import get_company_info, get_financial_data, get_historical_prices
 from src.tools.metrics_tool import calculate_metrics
+from src.tools.peer_comparison_tool import get_peer_comparison, get_peer_tickers
 from src.tools.report_tool import generate_financial_report
 from src.utils.config import get_settings
 
@@ -51,6 +52,10 @@ def render_metrics_table(metrics: dict) -> None:
     st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
 
 
+def render_peer_comparison(peer_comparison: pd.DataFrame) -> None:
+    st.dataframe(peer_comparison, hide_index=True, use_container_width=True)
+
+
 def mask_api_key(api_key: str | None) -> str:
     if not api_key:
         return "N/A"
@@ -85,6 +90,11 @@ st.title("FinResearch Agent")
 st.caption("LLM-powered financial research assistant for educational analysis.")
 
 ticker = st.text_input("Enter a stock ticker", value="AAPL", placeholder="AAPL, MSFT, NVDA")
+peer_tickers_input = st.text_input(
+    "Peer tickers (optional)",
+    placeholder="MSFT,GOOGL,NVDA",
+    help="Leave blank to use the built-in peer mapping for AAPL, MSFT, NVDA, or TSLA.",
+)
 period = st.selectbox("Historical price period", ["1y", "2y", "5y"], index=0)
 
 analyze = st.button("Analyze", type="primary")
@@ -101,6 +111,8 @@ if analyze:
             company_info = get_company_info(ticker)
             financial_data = get_financial_data(ticker)
             metrics = calculate_metrics(price_data, company_info, financial_data)
+            peer_comparison = get_peer_comparison(ticker, peer_tickers_input)
+            peer_tickers = get_peer_tickers(ticker, peer_tickers_input)
 
         st.subheader("Company Profile")
         render_company_profile(company_info)
@@ -110,6 +122,13 @@ if analyze:
 
         st.subheader("Financial Metrics")
         render_metrics_table(metrics)
+
+        st.subheader("Peer Comparison")
+        if peer_tickers:
+            st.caption(f"Compared with: {', '.join(peer_tickers)}")
+        else:
+            st.caption("No peer mapping found. Showing the primary ticker only.")
+        render_peer_comparison(peer_comparison)
 
         report_payload = {
             "ticker": ticker,
