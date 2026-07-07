@@ -6,6 +6,7 @@ from src.tools.market_data_tool import get_company_info, get_financial_data, get
 from src.tools.metrics_tool import calculate_metrics
 from src.tools.peer_comparison_tool import get_peer_comparison, get_peer_tickers
 from src.tools.report_tool import generate_financial_report
+from src.tools.screener_tool import parse_ticker_list, run_market_screener
 from src.utils.config import get_settings
 
 
@@ -56,6 +57,10 @@ def render_peer_comparison(peer_comparison: pd.DataFrame) -> None:
     st.dataframe(peer_comparison, hide_index=True, use_container_width=True)
 
 
+def render_watchlist(watchlist: pd.DataFrame) -> None:
+    st.dataframe(watchlist, hide_index=True, use_container_width=True)
+
+
 def mask_api_key(api_key: str | None) -> str:
     if not api_key:
         return "N/A"
@@ -89,6 +94,28 @@ def provider_label(base_url: str | None) -> str:
 st.title("FinResearch Agent")
 st.caption("LLM-powered financial research assistant for educational analysis.")
 
+st.header("Market Screener")
+screener_tickers_input = st.text_input(
+    "Ticker list",
+    value="AAPL,MSFT,NVDA,TSLA,GOOGL",
+    placeholder="AAPL,MSFT,NVDA,TSLA,GOOGL",
+)
+run_screener = st.button("Run Screener", type="secondary")
+
+if run_screener:
+    screener_tickers = parse_ticker_list(screener_tickers_input)
+    if not screener_tickers:
+        st.warning("Please enter at least one ticker for the market screener.")
+    else:
+        with st.spinner("Running market screener..."):
+            watchlist = run_market_screener(screener_tickers)
+
+        st.subheader("Research Watchlist")
+        st.caption("This watchlist is for research screening only and is not a buy/sell recommendation.")
+        render_watchlist(watchlist)
+
+st.divider()
+st.header("Single Stock Analysis")
 ticker = st.text_input("Enter a stock ticker", value="AAPL", placeholder="AAPL, MSFT, NVDA")
 peer_tickers_input = st.text_input(
     "Peer tickers (optional)",
